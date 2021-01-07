@@ -4,6 +4,7 @@ library(caret)
 
 setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/outputs/")
 dat <- read.csv("ePrime_ALL_OUTCOMES_data.csv", header=T)
+dat$mother_edu <- factor(dat$mother_edu)
 
 psych_vars <- c("z_ecbq_neg_affect","z_ecbq_surgency","z_ecbq_effort_control",
                 "z_emque_emo_contagion","z_emque_attent_others","z_emque_prosocial",
