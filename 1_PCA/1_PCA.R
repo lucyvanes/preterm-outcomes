@@ -1,12 +1,10 @@
-## 08/01/2021
-## Lucy Vanes
-## PCA code for: 
-## The effects of neurobiology and environment on childhood outcomes following very preterm birth
-## This code takes raw questionnaire subscales as input
-## regresses out age at assessment and index of multiple deprivation
-## runs PCA with permutation testing and split-half reliability analysis
-## outputs PC scores
-## generates heatmaps
+# 08/01/2021; Lucy Vanes
+# PCA code for: The effects of neurobiology and environment on childhood outcomes following very preterm birth
+# This code takes raw questionnaire subscales as input
+# regresses out age at assessment and index of multiple deprivation
+# runs PCA with permutation testing and split-half reliability analysis
+# outputs PC scores
+# generates heatmaps
 
 library(caret)
 
