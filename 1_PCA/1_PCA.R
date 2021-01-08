@@ -1,6 +1,14 @@
+## 08/01/2021
+## Lucy Vanes
+## PCA code for: 
+## The effects of neurobiology and environment on childhood outcomes following very preterm birth
+## This code takes raw questionnaire subscales as input
+## regresses out age at assessment and index of multiple deprivation
+## runs PCA with permutation testing and split-half reliability analysis
+## outputs PC scores
+## generates heatmaps
 
 library(caret)
-
 
 setwd("C:/Users/vanes/OneDrive/Documents/GitHub/preterm-outcomes/data")
 dat <- read.csv("1_PCA_data.csv", header=T)
@@ -47,23 +55,19 @@ for (v in vars_reg2){
 dat_prep$age4 <- NULL
 dat_prep$ses <- NULL
 
-#================
-# Run PCA
-#================
+#===========================================
+#    Run PCA with permutation testing
+#===========================================
+# for each permutation, shuffle rows in each column, re-compute PCA
+# function for the permutation testing taken from:
+# http://bioops.info/2015/01/permutation-pca/
 pcadat <- dat_prep
 pcadat$id <- NULL
 pcadat_scaled <- as.data.frame(scale(pcadat, center=T, scale=T))
 
-# permutation testing:
-# for each permutation, shuffle rows in each column, re-compute PCA
-#==============================================================================
-# taken from:
-# http://bioops.info/2015/01/permutation-pca/
-# the fuction to assess the significance of the principal components.
 sign.pc<-function(x,R=5000,s=10, cor=T,...){
   pc.out<-princomp(x,cor=cor,...)  # run PCA
-  pve=(pc.out$sdev^2/sum(pc.out$sdev^2))[1:s] # the proportion of variance of each PC
-  
+  pve=(pc.out$sdev^2/sum(pc.out$sdev^2))[1:s] # proportion of variance for each PC
   pve.perm<-matrix(NA,ncol=s,nrow=R)
   for(i in 1:R){
     x.perm<-apply(x,2,sample)
@@ -92,7 +96,7 @@ PCs_orig_sig <- PCs_orig[,PC_nos]
 names(PCs_orig_sig) <- paste("orig_PC", PC_nos, sep="")
 
 #===========================================
-#        Split-half anaylysis
+#        Split-half analysis
 #===========================================
 n_half <- round(dim(pcadat_scaled)[1] * 0.5)
 H <- 1000 # how many split half replications
@@ -166,9 +170,9 @@ dim(loadings_sig[loadings_sig$half1_PC4==1 | loadings_sig$half2_PC4==1,])[1] / H
     dim(loadings_sig[loadings_sig$half1_PC4==0 & loadings_sig$half2_PC4==1,])[1]) / H
 
 
-#===============================================================================
-# inspect loadings and add PC scores to dataframe
-#===============================================================================
+#=================================================
+# Inspect loadings and add PC scores to dataframe
+#=================================================
 loadings <- out$loadings 
 loadings <- as.data.frame.matrix(loadings)
 
@@ -192,12 +196,13 @@ for (i in levels(dat_prep$id)){
   dat$PC3_all[dat$id==i] <- dat_prep$PC3_all[dat_prep$id==i]
 }
 
-#=============================================================
-# Plot heatmaps
-#=============================================================
+#=================================================
+#             Plot heatmaps
+#=================================================
 library(corrplot)
 library(RColorBrewer)
 library(dplyr)
+
 # prepare correlations
 #========================
 pcs_indx <- which(!is.na(match(names(dat_prep), c("PC1_all","PC2_all","PC3_all"))))
@@ -244,7 +249,7 @@ dimnames(loadings)[[1]] <- c("Negative affect", "Surgency","Effortful control", 
 dimnames(loadings)[[2]] <- c("PC1","PC2","PC3")
 
 # plots
-#===================================================
+#====================
 col <- rev(colorRampPalette(brewer.pal(n=11, name="RdBu"))(100))
 
 corrplot(M, p.mat = res1$p,method="color", col=col,
