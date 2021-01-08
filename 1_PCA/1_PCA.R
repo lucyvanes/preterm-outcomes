@@ -1,4 +1,5 @@
-# 08/01/2021; Lucy Vanes
+# 08/01/2021
+# Lucy Vanes
 # PCA code for: The effects of neurobiology and environment on childhood outcomes following very preterm birth
 # This code takes raw questionnaire subscales as input
 # regresses out age at assessment and index of multiple deprivation
