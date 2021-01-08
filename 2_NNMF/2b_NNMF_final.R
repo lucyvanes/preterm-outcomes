@@ -1,24 +1,21 @@
+# 08/01/2021 
+# Lucy Vanes
+# NNMF code for: The effects of neurobiology and environment on childhood outcomes following very preterm birth
+# This code runs NNMF on voxelwise MRI data for a specific rank (identified using 2a_NNMF_test_rank.R)
+# And outputs components back to .nii files for visualisation
+
 library(NMF)
 library(pracma)
 library(dplyr)
 library(neurobase)
 
-
 # mask should be in mask_dir and final images to be used should be in data_dir
 # mask and images must be in the same space with the same image dimensions!
 
-location <- "local" # "NaN" or "local"
-if (location=="local"){
-  mask_dir <- "C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/mask"
-  data_dir <- "C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/data"
-  output_dir <- "C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/output/rank_res_AAL"
-} else if (location=="NaN"){
-  mask_dir <-  "/data/project/BIPP/Analyses/NNMF/"
-  data_dir <- "/data/project/BIPP/Analyses/NNMF/Jac_data_GM"
-  output_dir <- "/data/project/BIPP/Analyses/NNMF/rank_res_GM"
-} else {
-  print("select location to run analysis - NaN or local")
-}
+mask_dir <- "C:/Users/vanes/OneDrive/Documents/GitHub/preterm-outcomes/data/NNMF_data/masks"
+data_dir <- "C:/Users/vanes/OneDrive/Documents/GitHub/preterm-outcomes/data/NNMF_data/preprocessed"
+networks_output_dir1 <- "C:/Users/vanes/OneDrive/Documents/GitHub/preterm-outcomes/data/NNMF_data/Network_vis_thresh25" 
+networks_output_dir2 <- "C:/Users/vanes/OneDrive/Documents/GitHub/preterm-outcomes/data/NNMF_data/Network_vis_times100000" 
 
 setwd(mask_dir)
 mask <- readnii("AAL_atlas_mask_2mm.nii.gz") # read mask into R
@@ -27,7 +24,6 @@ mask_vec <- c(mask)                          # vectorise mask, this is now a vec
 outside_mask <- which(mask_vec==0)           # define what is outside and inside mask
 inside_mask <- which(mask_vec==1)
 length(mask[mask==1])
-
 
 setwd(data_dir)
 scans <- dir(pattern="smoothedJacs_2mm_AAL_masked")   # some pattern to find your images
@@ -43,22 +39,19 @@ for (s in 1:length(scans)){
   scandata[,s] <- tvec_masked
 }
 
-
 dat <- scandata
 dat <- exp(dat) # exponentiate jacobians to get positive values
 dat <- as.matrix(dat)
 dim(dat)     # this should be voxels X subjects
 
-#=============================================================
+#================================================================
 
-best_rank <- 15
+best_rank <- 15   # choose rank (ascertained with previous script)
 
-#=============================================================
+#=================================================================
 
-# rerun with chosen number of ranks, using nndsdv
-
+# rerun NNMF with chosen number of ranks, using nndsdv
 res_nmf <- nmf(dat, best_rank, method="lee",seed="nndsvd", .options="v")
-
 
 # results NMF
 V.hat <- fitted(res_nmf)
@@ -67,14 +60,12 @@ h_nmf <- coef(res_nmf)          # h is the coefficient matrix containing subject
 h <- as.data.frame(t(h_nmf))
 h$id <- substr(scans, 3, 6)
 h$id <- factor(h$id)
-
 dim(w_nmf)
 dim(h_nmf)
 
 #============================================
 # write components back to nii 
 #============================================
-
 featuresMax <- extractFeatures(res_nmf, method="max") # see ?extractFeatures for details
 features03 <- extractFeatures(res_nmf, 0.3)            # see ?extractFeatures for details
 
@@ -82,79 +73,17 @@ mask_vec <- c(mask)
 outside_mask <- which(mask_vec==0)
 inside_mask <- which(mask_vec==1)
 
-
-# make sure to create appropriate directories first, one each for
-# - methodMax
-# - featureSelection03
-# - thresh25 (<-- this is the one I mostly use for visualisation!)
-# - thresh50 
-# - times100000 (<-- this is the one I use to calculated the weighted means!)
-
 for (r in 1:best_rank){
-  
-  # only most important voxels in network
-  #======================================
-  W <- as.data.frame(w_nmf)[,r]
-
-  setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/NNMF15_AAL/rank15_AAL_methodMax/")
-  if (!is.na(featuresMax[[r]][1])){
-    W[-featuresMax[[r]]] <- 0
-    
-    new_nifti <- mask_vec
-    new_nifti[inside_mask] <- W
-    
-    new_nifti <- niftiarr(mask, new_nifti)
-    nii_name <- paste("NNMF_network_max_",r, ".nii.gz", sep="")
-    writenii(new_nifti, nii_name)
-  }
-  
-  
-  # feature selection with 0.3 threshold
-  #===============================
-  W <- as.data.frame(w_nmf)[,r]
-  
-  setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/NNMF15_AAL/rank15_AAL_featureSelection03/")
-  
-  W[-features03[[r]]] <- 0
-  
-  new_nifti <- mask_vec
-  new_nifti[inside_mask] <- W
-  
-  new_nifti <- niftiarr(mask, new_nifti)
-  nii_name <- paste("NNMF_network_",r, ".nii.gz", sep="")
-  writenii(new_nifti, nii_name)
-  
   #thresholding at 25%
   #===============================
   W <- as.data.frame(w_nmf)[,r]
-  setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/NNMF15_AAL/rank15_AAL_thresh25/")
-  
+  setwd(networks_output_dir1)
   W_zero <- which(almost.zero(W))
   W[W_zero] <- 0
   W_thresh <- range(W[W>0])[1] + (0.25*((range(W[W>0])[2]-range(W[W>0])[1])))
   W[W < W_thresh] <- 0
-  
   new_nifti <- mask_vec
   new_nifti[inside_mask] <- W
-  
-  new_nifti <- niftiarr(mask, new_nifti)
-  nii_name <- paste("NNMF_network_",r, ".nii.gz", sep="")
-  writenii(new_nifti, nii_name)
-  
-  
-  #thresholding at 50%
-  #===============================
-  W <- as.data.frame(w_nmf)[,r]
-  setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/NNMF15_AAL/rank15_AAL_thresh50/")
-  
-  W_zero <- which(almost.zero(W))
-  W[W_zero] <- 0
-  W_thresh <- range(W[W>0])[1] + (0.5*((range(W[W>0])[2]-range(W[W>0])[1])))
-  W[W < W_thresh] <- 0
-  
-  new_nifti <- mask_vec
-  new_nifti[inside_mask] <- W
-  
   new_nifti <- niftiarr(mask, new_nifti)
   nii_name <- paste("NNMF_network_",r, ".nii.gz", sep="")
   writenii(new_nifti, nii_name)
@@ -162,21 +91,16 @@ for (r in 1:best_rank){
   # unthresholded, times 100000
   #===============================
   W <- as.data.frame(w_nmf)[,r]
-  setwd("C:/Users/vanes/Dropbox/KCL_BMEIS/ePrime/data/MRI/Jacobians/NNMF/NNMF15_AAL/rank15_GM_times100000/")
-  
+  setwd(networks_output_dir2)
   W <- W*100000
-  
   new_nifti <- mask_vec
   new_nifti[inside_mask] <- W
-  
   new_nifti <- niftiarr(mask, new_nifti)
   nii_name <- paste("NNMF_network_",r, ".nii.gz", sep="")
   writenii(new_nifti, nii_name)
 }
 
-
 #======================================================================================
 # calculate weighted mean jacobian of each network
-# using apply_weights.sh in /data/project/BIPP/Analyses/NNMF15_AAL
-
+# using apply_weights.sh 
 #======================================================================================

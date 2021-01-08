@@ -271,8 +271,6 @@ for (r in unique(wold_holdouts$rank)){
 # error gradient no longer significant? Here it is 16, so I choose 15 as my 
 # optimal rank
 
-#===============================================================================
-
 # Plot RMSE
 #======================
 
