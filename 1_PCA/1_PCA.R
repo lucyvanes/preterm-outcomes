@@ -1,4 +1,4 @@
-# 08/01/2021
+# 15/04/2021
 # Lucy Vanes
 # PCA code for: The effects of neurobiology and environment on childhood outcomes following very preterm birth
 # This code takes raw questionnaire subscales as input
@@ -24,13 +24,13 @@ cog_vars <- c("z_brief_inhibit","z_brief_shift","z_brief_emo_control","z_brief_w
                 "z_wppsi_verb_comp","z_wppsi_visuospatial","z_wppsi_fluid_res","z_wppsi_wm","z_wppsi_proc_speed",
                 "z_wppsi_vocab","z_wppsi_nonverbal","z_wppsi_gen_abilities","z_wppsi_cog_prof")
 
-control_vars <- c("age4","ses")
+control_vars <- c("age4")
 all_vars <- c("id",psych_vars, cog_vars, control_vars)
 
 dat_prep <- dat[,all_vars]
 dat_prep <- dat_prep[complete.cases(dat_prep),]
 
-# correct certain variables for age at assessment and ses (IMD)
+# correct certain variables for age at assessment 
 #=================================================================================
 vars_reg1 <- c("z_ecbq_neg_affect","z_ecbq_surgency","z_ecbq_effort_control",
           "z_emque_emo_contagion","z_emque_attent_others","z_emque_prosocial",
@@ -39,20 +39,14 @@ vars_reg1 <- c("z_ecbq_neg_affect","z_ecbq_surgency","z_ecbq_effort_control",
           "z_srs_soc_awareness","z_srs_soc_cog","z_srs_soc_comm","z_srs_soc_mot","z_srs_rrb",
           "z_brief_inhibit","z_brief_shift","z_brief_emo_control","z_brief_wm",
           "z_brief_plan")
-vars_reg2 <- c("z_wppsi_verb_comp","z_wppsi_visuospatial","z_wppsi_fluid_res","z_wppsi_wm","z_wppsi_proc_speed",
-               "z_wppsi_vocab","z_wppsi_nonverbal","z_wppsi_gen_abilities","z_wppsi_cog_prof")
 
 for (v in vars_reg1){
-  lm1 <- lm(paste(v, "~ age4 + ses"), dat_prep)
-  dat_prep[v] <- lm1$resid
-}
-for (v in vars_reg2){
-  lm1 <- lm(paste(v, "~ ses"), dat_prep)
+  lm1 <- lm(paste(v, "~ age4"), dat_prep)
   dat_prep[v] <- lm1$resid
 }
 
+
 dat_prep$age4 <- NULL
-dat_prep$ses <- NULL
 
 #===========================================
 #    Run PCA with permutation testing
@@ -176,7 +170,9 @@ loadings <- out$loadings
 loadings <- as.data.frame.matrix(loadings)
 
 # http://strata.uga.edu/8370/lecturenotes/principalComponents.html
-threshold <- sqrt(1/ncol(pcadat))  # cutoff for 'important' loadings
+threshold <- round(sqrt(1/ncol(pcadat)), 2)  # cutoff for 'important' loadings
+threshold 
+
 loadings[abs(loadings) < threshold] <- NA
 loadings
 
@@ -186,13 +182,13 @@ dat_prep$PC2_all <- out$scores[,2]
 dat_prep$PC3_all <- out$scores[,3]
 dat$id <- factor(dat$id)
 dat_prep$id <- factor(dat_prep$id)
-dat$PC1_all <- NA
-dat$PC2_all <- NA
-dat$PC3_all <- NA
+dat$PC1 <- NA
+dat$PC2 <- NA
+dat$PC3 <- NA
 for (i in levels(dat_prep$id)){
-  dat$PC1_all[dat$id==i] <- dat_prep$PC1_all[dat_prep$id==i]
-  dat$PC2_all[dat$id==i] <- dat_prep$PC2_all[dat_prep$id==i]
-  dat$PC3_all[dat$id==i] <- dat_prep$PC3_all[dat_prep$id==i]
+  dat$PC1[dat$id==i] <- dat_prep$PC1_all[dat_prep$id==i]
+  dat$PC2[dat$id==i] <- dat_prep$PC2_all[dat_prep$id==i]
+  dat$PC3[dat$id==i] <- dat_prep$PC3_all[dat_prep$id==i]
 }
 
 #=================================================

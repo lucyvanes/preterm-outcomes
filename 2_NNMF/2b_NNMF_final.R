@@ -66,12 +66,12 @@ dim(h_nmf)
 #============================================
 # write components back to nii 
 #============================================
-featuresMax <- extractFeatures(res_nmf, method="max") # see ?extractFeatures for details
-features03 <- extractFeatures(res_nmf, 0.3)            # see ?extractFeatures for details
 
 mask_vec <- c(mask)
 outside_mask <- which(mask_vec==0)
 inside_mask <- which(mask_vec==1)
+
+library(bazar)
 
 for (r in 1:best_rank){
   #thresholding at 25%
